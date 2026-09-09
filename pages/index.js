@@ -1,27 +1,11 @@
 import gsap from "gsap";
 import { useEffect, useRef } from "react";
-import Image from "next/image";
 import AnimatedTileBg from "@/components/AnimatedTileBg";
+import StartNyny from "@/components/startNyny";
 
 export default function Home() {
   const titleRef = useRef(null);
   const highlightRefs = useRef([]);
-
-  // NYNY
-  const NYNY_SPRITE = [
-    {
-      key : "idle_nyny",
-      width : 384,
-      height : 630,
-      filePath : '/ocs/nyny-1.png'
-    },
-    {
-      key : "click_nyny",
-      width : 663,
-      height : 630,
-      filePath : '/ocs/nyny-2.png'
-    }
-  ]
 
   useEffect(() => {
     const letters = titleRef.current.querySelectorAll(".letter");
@@ -71,7 +55,7 @@ export default function Home() {
       />
 
       <main
-        className="relative z-10 min-h-screen w-full flex flex-col items-center justify-center 
+        className="relative z-10 min-h-screen w-full flex flex-col items-center justify-center  
         text-brand-primary p-4 sm:p-8 text-center"
       >
         <h1
@@ -116,12 +100,11 @@ export default function Home() {
           </span>{" "}
           file
         </h4>
+        <div className="h-[10vw]"/>
 
-        <Image
-          src="/ocs/nyny-1.png"
-          width={384}
-          height={630}
-          alt=""
+        <StartNyny
+          scale={50}
+          href="/convert"
         />
       </main>
     </div>
