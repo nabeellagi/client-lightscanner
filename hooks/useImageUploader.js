@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useRef, useState } from "react";
 
-export const MAX_FILE_BYTES = 10 * 1024 * 1024; // MAX = 10MB per Images
+export const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10MB per image
 export const MAX_IMAGES = 25;
 export const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp"];
 
@@ -12,7 +12,6 @@ const THUMB_QUALITY = 0.6;
 let uid = 0;
 const nextId = () => `img_${Date.now()}_${uid++}`;
 
-// ============== THUMBNAIL MAKER ===========
 async function buildThumbnail(file) {
     const bitmap = await createImageBitmap(file);
     const scale = Math.min(1, THUMB_MAX_DIMENSION / Math.max(bitmap.width, bitmap.height));
@@ -20,12 +19,10 @@ async function buildThumbnail(file) {
     const h = Math.max(1, Math.round(bitmap.height * scale));
 
     const canvas = document.createElement("canvas");
-    const width = w;
-    const height = h;
-
+    canvas.width = w;
+    canvas.height = h;
     const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("canvas not supported!");
-
+    if (!ctx) throw new Error("Canvas not supported");
     ctx.drawImage(bitmap, 0, 0, w, h);
 
     const blob = await new Promise((resolve, reject) =>
@@ -44,17 +41,25 @@ async function buildThumbnail(file) {
     };
 }
 
+/**
+ * Owns the queued images. Validation problems (wrong type, too big, over the
+ * cap) never throw — they're reported through `pushIssue` so the caller can
+ * drive a toast/popup, and the offending file is simply skipped.
+ *
+ * Queued image shape:
+ * { id, file, previewUrl, thumbUrl, originalSize, compressedSize, width, height }
+ */
 export function useImageUploader(pushIssue) {
     const [images, setImages] = useState([]);
-    const imageRef = useRef([]);
-    imageRef.current = images;
+    const imagesRef = useRef([]);
+    imagesRef.current = images;
 
     const addFiles = useCallback(
         async (incoming) => {
             const files = Array.from(incoming);
-            const currentCount = imageRef.current.length;
+            const currentCount = imagesRef.current.length;
 
-            // FULL CASE
+            // Already full: reject the whole batch outright.
             if (currentCount >= MAX_IMAGES) {
                 pushIssue(
                     "cap-reached",
@@ -63,7 +68,7 @@ export function useImageUploader(pushIssue) {
                 return;
             }
 
-            // PARTIAL OR BEFORE MAX
+            // Partially over: keep what fits, cancel the rest.
             const room = MAX_IMAGES - currentCount;
             let candidates = files;
             if (files.length > room) {
@@ -138,5 +143,22 @@ export function useImageUploader(pushIssue) {
         });
     }, []);
 
-    return { images, addFiles, removeImage, reorder };
+    const updateImageCrop = useCallback((id, { blob, width, height, cropPixels }) => {
+        setImages((prev) =>
+            prev.map((img) => {
+                if (img.id !== id) return img;
+                URL.revokeObjectURL(img.thumbUrl);
+                return {
+                    ...img,
+                    thumbUrl: URL.createObjectURL(blob),
+                    compressedSize: blob.size,
+                    croppedWidth: width,
+                    croppedHeight: height,
+                    cropPixels,
+                };
+            })
+        );
+    }, []);
+
+    return { images, addFiles, removeImage, reorder, updateImageCrop };
 }
