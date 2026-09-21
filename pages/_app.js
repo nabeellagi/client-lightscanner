@@ -1,5 +1,5 @@
 import "@/styles/globals.css"; // Your global Tailwind v4 file
-import { hiMelody, indieFlower, kavoon } from "./fonts";
+import { hiMelody, indieFlower, kavoon } from "@/components/fonts";
 
 export default function App({ Component, pageProps }) {
   return (

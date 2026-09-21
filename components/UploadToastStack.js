@@ -3,11 +3,14 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 
+const DEFAULT_ACCENT = { color: "#803c17", label: "Notice" };
+
 const ACCENTS = {
   oversize: { color: "#b23a2f", label: "Too heavy" },
   "invalid-type": { color: "#7a4b9d", label: "Not an image" },
   "cap-reached": { color: "#803c17", label: "At the limit" },
   "cap-partial": { color: "#803c17", label: "Some left out" },
+  "crop-failed": { color: "#b23a2f", label: "Couldn't save" },
 };
 
 function Toast({ issue, onDismiss }) {
@@ -56,7 +59,7 @@ function Toast({ issue, onDismiss }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const accent = ACCENTS[issue.type];
+  const accent = ACCENTS[issue.type] ?? DEFAULT_ACCENT;
 
   return (
     <div
@@ -89,7 +92,7 @@ function Toast({ issue, onDismiss }) {
 
 export default function UploadToastStack({ issues, onDismiss }) {
   return (
-    <div className="pointer-events-none fixed bottom-4 right-4 z-50 flex flex-col-reverse gap-2">
+    <div className="pointer-events-none fixed bottom-4 right-4 z-100 flex flex-col-reverse gap-2">
       {issues.map((issue) => (
         <Toast key={issue.id} issue={issue} onDismiss={onDismiss} />
       ))}

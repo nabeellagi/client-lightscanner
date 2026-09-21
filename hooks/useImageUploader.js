@@ -13,7 +13,7 @@ let uid = 0;
 const nextId = () => `img_${Date.now()}_${uid++}`;
 
 async function buildThumbnail(file) {
-    const bitmap = await createImageBitmap(file);
+    const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
     const scale = Math.min(1, THUMB_MAX_DIMENSION / Math.max(bitmap.width, bitmap.height));
     const w = Math.max(1, Math.round(bitmap.width * scale));
     const h = Math.max(1, Math.round(bitmap.height * scale));
@@ -41,14 +41,6 @@ async function buildThumbnail(file) {
     };
 }
 
-/**
- * Owns the queued images. Validation problems (wrong type, too big, over the
- * cap) never throw — they're reported through `pushIssue` so the caller can
- * drive a toast/popup, and the offending file is simply skipped.
- *
- * Queued image shape:
- * { id, file, previewUrl, thumbUrl, originalSize, compressedSize, width, height }
- */
 export function useImageUploader(pushIssue) {
     const [images, setImages] = useState([]);
     const imagesRef = useRef([]);
