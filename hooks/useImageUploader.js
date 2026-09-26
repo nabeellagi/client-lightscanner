@@ -91,6 +91,16 @@ export function useImageUploader(pushIssue) {
                 accepted.map(async (file) => {
                     try {
                         const { thumbUrl, compressedSize, width, height } = await buildThumbnail(file);
+                        // return {
+                        //     id: nextId(),
+                        //     file,
+                        //     previewUrl: URL.createObjectURL(file),
+                        //     thumbUrl,
+                        //     originalSize: file.size,
+                        //     compressedSize,
+                        //     width,
+                        //     height,
+                        // };
                         return {
                             id: nextId(),
                             file,
@@ -100,6 +110,7 @@ export function useImageUploader(pushIssue) {
                             compressedSize,
                             width,
                             height,
+                            conversionBlob: null,
                         };
                     } catch {
                         pushIssue("invalid-type", `${file.name} couldn't be read as an image — skipped.`);
@@ -135,22 +146,26 @@ export function useImageUploader(pushIssue) {
         });
     }, []);
 
-    const updateImageCrop = useCallback((id, { blob, width, height, cropPixels }) => {
-        setImages((prev) =>
-            prev.map((img) => {
-                if (img.id !== id) return img;
-                URL.revokeObjectURL(img.thumbUrl);
-                return {
-                    ...img,
-                    thumbUrl: URL.createObjectURL(blob),
-                    compressedSize: blob.size,
-                    croppedWidth: width,
-                    croppedHeight: height,
-                    cropPixels,
-                };
-            })
-        );
-    }, []);
+    const updateImageCrop = useCallback(
+        (id, { blob, width, height, cropPixels }) => {
+            setImages((prev) =>
+                prev.map((img) => {
+                    if (img.id !== id) return img;
+
+                    URL.revokeObjectURL(img.thumbUrl);
+
+                    return {
+                        ...img,
+                        thumbUrl: URL.createObjectURL(blob),
+                        compressedSize: blob.size,
+                        croppedWidth: width,
+                        croppedHeight: height,
+                        cropPixels,
+                        conversionBlob: blob,
+                    };
+                })
+            );
+        },[]);
 
     return { images, addFiles, removeImage, reorder, updateImageCrop };
 }

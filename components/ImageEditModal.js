@@ -32,6 +32,11 @@ export default function ImageEditModal({ image, pageWidthIn, pageHeightIn, pushI
     const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
 
+    /**
+
+    
+     */
+
     const aspect =
         aspectMode === "page" ? pageWidthIn / pageHeightIn : aspectMode === "square" ? 1 : safeAspect(image.width, image.height);
 
