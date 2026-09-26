@@ -19,7 +19,7 @@ import {
     orientedDimensions,
 } from "@/lib/pageSizes";
 import { computeContainFit } from "@/lib/fitToPage";
-import { API_BASE_URL } from "@/lib/api";
+import { API_BASE_URL, apiHeaders } from "@/lib/api";
 
 function sanitizeFilename(filename, fallback = "image") {
     const base = filename?.replace(/\.[^/.]+$/, "") || fallback;
@@ -173,6 +173,7 @@ export default function Convert() {
                     `${API_BASE_URL}/mode/${encodeURIComponent(request.mode)}`,
                     {
                         method: "POST",
+                        headers: apiHeaders(),
                         body: formData,
                     },
                 );
@@ -341,8 +342,8 @@ export default function Convert() {
                                                     type="button"
                                                     onClick={() => setOrientation(option)}
                                                     className={`px-3 py-2 text-sm capitalize transition-colors ${orientation === option
-                                                            ? "bg-[#803c17] text-[#f5e3ca]"
-                                                            : "bg-white text-[#803c17]"
+                                                        ? "bg-[#803c17] text-[#f5e3ca]"
+                                                        : "bg-white text-[#803c17]"
                                                         }`}
                                                 >
                                                     {option}

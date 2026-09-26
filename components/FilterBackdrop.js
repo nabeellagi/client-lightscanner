@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
-import { API_BASE_URL } from "@/lib/api";
+import { API_BASE_URL, apiHeaders } from "@/lib/api";
 
 const FALLBACK_MODES = [
     {
@@ -57,7 +57,7 @@ export default function FilterBackdrop({
 
         let cancelled = false;
 
-        fetch(`${API_BASE_URL}/mode`)
+        fetch(`${API_BASE_URL}/mode`, { headers: apiHeaders() })
             .then(async (response) => {
                 if (!response.ok) {
                     throw new Error("Could not load filters.");
