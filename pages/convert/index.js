@@ -20,6 +20,8 @@ import {
 } from "@/lib/pageSizes";
 import { computeContainFit } from "@/lib/fitToPage";
 import { API_BASE_URL, apiHeaders } from "@/lib/api";
+import Head from "next/head";
+
 
 function sanitizeFilename(filename, fallback = "image") {
     const base = filename?.replace(/\.[^/.]+$/, "") || fallback;
@@ -254,205 +256,210 @@ export default function Convert() {
     };
 
     return (
-        <div className="relative min-h-screen w-full overflow-hidden">
-            <AnimatedTileBg scale={30} speed={25} fileName="/bgs/checker1.png" />
+        <>
+            <Head>
+                Lightscanner - Convert your images into PDF! ★★彡
+            </Head>
+            <div className="relative min-h-screen w-full overflow-hidden">
+                <AnimatedTileBg scale={30} speed={25} fileName="/bgs/checker1.png" />
 
-            <main
-                className="relative z-10 min-h-screen w-full flex flex-col items-center justify-center
+                <main
+                    className="relative z-10 min-h-screen w-full flex flex-col items-center justify-center
                 text-brand-primary p-4 sm:p-8 text-center"
-            >
-                <div className="relative w-full flex flex-col items-center">
-                    <div
-                        className="relative z-0 bg-[#f5e3ca] border-[#803c17] border-[3.5px]
+                >
+                    <div className="relative w-full flex flex-col items-center">
+                        <div
+                            className="relative z-0 bg-[#f5e3ca] border-[#803c17] border-[3.5px]
                         rounded-t-2xl w-[70vw] sm:w-[40vw] h-[8vh]
                         mt-8 flex flex-col items-center justify-center translate-y-2"
-                    >
-                        <h3 className="font-kavoon text-lg sm:text-2xl">
-                            ᯓ★★{tabLabel} ★★彡
-                        </h3>
-                    </div>
+                        >
+                            <h3 className="font-kavoon text-lg sm:text-2xl">
+                                ᯓ★★{tabLabel} ★★彡
+                            </h3>
+                        </div>
 
-                    <div
-                        className="relative z-10 bg-[#f5e3ca] border-[#803c17] border-[3.5px]
+                        <div
+                            className="relative z-10 bg-[#f5e3ca] border-[#803c17] border-[3.5px]
                         rounded-xl w-[80vw] h-[85vh]
                         flex flex-col items-center gap-4 p-4 sm:p-6 overflow-y-auto"
-                    >
-                        {images.length === 0 ? (
-                            <ImageDropzone
-                                onFiles={addFiles}
-                                disabled={images.length >= MAX_IMAGES}
-                            />
-                        ) : (
-                            <>
-                                <div className="w-full flex-1 overflow-y-auto pr-1">
-                                    <ImageGrid
-                                        images={images}
-                                        onReorder={reorder}
-                                        onRemove={removeImage}
-                                        onEdit={setEditingImageId}
-                                    />
-                                </div>
-
-                                <div className="w-full sm:w-72">
-                                    <ImageDropzone
-                                        onFiles={addFiles}
-                                        disabled={images.length >= MAX_IMAGES}
-                                        compact
-                                    />
-                                </div>
-
-                                <div
-                                    className="w-full flex flex-col sm:flex-row items-stretch
-                                    sm:items-end gap-3 border-t-[2.5px]
-                                    border-[#803c17]/30 pt-4"
-                                >
-                                    <label className="flex-1 flex flex-col gap-1 text-left">
-                                        <span className="font-kavoon text-xs text-[#803c17]">
-                                            Page size
-                                        </span>
-
-                                        <select
-                                            value={pageSizeId}
-                                            onChange={(e) => setPageSizeId(e.target.value)}
-                                            className="bg-white border-[2px] border-[#803c17]
-                                            rounded-lg px-3 py-2 text-sm text-[#4a2410]
-                                            focus:outline-none focus:ring-2 focus:ring-[#803c17]/40"
-                                        >
-                                            {PAGE_SIZES.map((size) => (
-                                                <option key={size.id} value={size.id}>
-                                                    {size.label} ({size.widthIn}
-                                                    &quot;
-                                                    {" × "}
-                                                    {size.heightIn}
-                                                    &quot;)
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </label>
-
-                                    <div className="flex flex-col gap-1 text-left">
-                                        <span className="font-kavoon text-xs text-[#803c17]">
-                                            Orientation
-                                        </span>
-
-                                        <div className="flex rounded-lg border-[2px] border-[#803c17] overflow-hidden">
-                                            {["portrait", "landscape"].map((option) => (
-                                                <button
-                                                    key={option}
-                                                    type="button"
-                                                    onClick={() => setOrientation(option)}
-                                                    className={`px-3 py-2 text-sm capitalize transition-colors ${orientation === option
-                                                        ? "bg-[#803c17] text-[#f5e3ca]"
-                                                        : "bg-white text-[#803c17]"
-                                                        }`}
-                                                >
-                                                    {option}
-                                                </button>
-                                            ))}
-                                        </div>
+                        >
+                            {images.length === 0 ? (
+                                <ImageDropzone
+                                    onFiles={addFiles}
+                                    disabled={images.length >= MAX_IMAGES}
+                                />
+                            ) : (
+                                <>
+                                    <div className="w-full flex-1 overflow-y-auto pr-1">
+                                        <ImageGrid
+                                            images={images}
+                                            onReorder={reorder}
+                                            onRemove={removeImage}
+                                            onEdit={setEditingImageId}
+                                        />
                                     </div>
 
-                                    <button
-                                        type="button"
-                                        onClick={handleOpenFilters}
-                                        className="font-kavoon text-sm sm:self-end
+                                    <div className="w-full sm:w-72">
+                                        <ImageDropzone
+                                            onFiles={addFiles}
+                                            disabled={images.length >= MAX_IMAGES}
+                                            compact
+                                        />
+                                    </div>
+
+                                    <div
+                                        className="w-full flex flex-col sm:flex-row items-stretch
+                                    sm:items-end gap-3 border-t-[2.5px]
+                                    border-[#803c17]/30 pt-4"
+                                    >
+                                        <label className="flex-1 flex flex-col gap-1 text-left">
+                                            <span className="font-kavoon text-xs text-[#803c17]">
+                                                Page size
+                                            </span>
+
+                                            <select
+                                                value={pageSizeId}
+                                                onChange={(e) => setPageSizeId(e.target.value)}
+                                                className="bg-white border-[2px] border-[#803c17]
+                                            rounded-lg px-3 py-2 text-sm text-[#4a2410]
+                                            focus:outline-none focus:ring-2 focus:ring-[#803c17]/40"
+                                            >
+                                                {PAGE_SIZES.map((size) => (
+                                                    <option key={size.id} value={size.id}>
+                                                        {size.label} ({size.widthIn}
+                                                        &quot;
+                                                        {" × "}
+                                                        {size.heightIn}
+                                                        &quot;)
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </label>
+
+                                        <div className="flex flex-col gap-1 text-left">
+                                            <span className="font-kavoon text-xs text-[#803c17]">
+                                                Orientation
+                                            </span>
+
+                                            <div className="flex rounded-lg border-[2px] border-[#803c17] overflow-hidden">
+                                                {["portrait", "landscape"].map((option) => (
+                                                    <button
+                                                        key={option}
+                                                        type="button"
+                                                        onClick={() => setOrientation(option)}
+                                                        className={`px-3 py-2 text-sm capitalize transition-colors ${orientation === option
+                                                            ? "bg-[#803c17] text-[#f5e3ca]"
+                                                            : "bg-white text-[#803c17]"
+                                                            }`}
+                                                    >
+                                                        {option}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            onClick={handleOpenFilters}
+                                            className="font-kavoon text-sm sm:self-end
                                         bg-[#803c17] text-[#f5e3ca]
                                         rounded-lg px-6 py-2.5
                                         hover:opacity-90 transition-opacity"
-                                    >
-                                        NEXT
-                                    </button>
-                                </div>
-                            </>
-                        )}
+                                        >
+                                            NEXT
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
                     </div>
-                </div>
-            </main>
+                </main>
 
-            <CameraButton onFiles={addFiles} disabled={images.length >= MAX_IMAGES} />
+                <CameraButton onFiles={addFiles} disabled={images.length >= MAX_IMAGES} />
 
-            <UploadToastStack issues={issues} onDismiss={dismissIssue} />
+                <UploadToastStack issues={issues} onDismiss={dismissIssue} />
 
-            <FilterBackdrop
-                isOpen={filterOpen}
-                selectedMode={selectedMode}
-                onSelect={setSelectedMode}
-                onClose={() => setFilterOpen(false)}
-                onConvert={handleConvert}
-                imageCount={images.length}
-                pageLabel={pageLabel}
-            />
+                <FilterBackdrop
+                    isOpen={filterOpen}
+                    selectedMode={selectedMode}
+                    onSelect={setSelectedMode}
+                    onClose={() => setFilterOpen(false)}
+                    onConvert={handleConvert}
+                    imageCount={images.length}
+                    pageLabel={pageLabel}
+                />
 
-            <ConversionOverlay
-                phase={conversionPhase}
-                errorMessage={conversionError}
-                downloadUrl={downloadUrl}
-                downloadName={downloadName}
-                onRetry={handleRetry}
-                onClose={handleCloseConversion}
-            />
+                <ConversionOverlay
+                    phase={conversionPhase}
+                    errorMessage={conversionError}
+                    downloadUrl={downloadUrl}
+                    downloadName={downloadName}
+                    onRetry={handleRetry}
+                    onClose={handleCloseConversion}
+                />
 
-            {editingImage && (
-                <ErrorBoundary
-                    onError={() =>
-                        pushIssue("crop-failed", "Something went wrong with that image.")
-                    }
-                    fallback={(reset) => (
-                        <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
-                            <div
-                                className="bg-[#f5e3ca] border-[#803c17] border-[3.5px]
+                {editingImage && (
+                    <ErrorBoundary
+                        onError={() =>
+                            pushIssue("crop-failed", "Something went wrong with that image.")
+                        }
+                        fallback={(reset) => (
+                            <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
+                                <div
+                                    className="bg-[#f5e3ca] border-[#803c17] border-[3.5px]
                                 rounded-2xl w-full sm:max-w-sm p-5 flex flex-col
                                 items-center gap-4 text-center"
-                            >
-                                <p className="font-kavoon text-sm text-[#803c17]">
-                                    Something went wrong with this image.
-                                </p>
+                                >
+                                    <p className="font-kavoon text-sm text-[#803c17]">
+                                        Something went wrong with this image.
+                                    </p>
 
-                                <p className="text-xs text-[#803c17]/70">
-                                    Nothing else you've added is affected. You can try opening it
-                                    again or remove it.
-                                </p>
+                                    <p className="text-xs text-[#803c17]/70">
+                                        Nothing else you've added is affected. You can try opening it
+                                        again or remove it.
+                                    </p>
 
-                                <div className="flex gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={reset}
-                                        className="rounded-lg border-[2px] border-[#803c17]
+                                    <div className="flex gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={reset}
+                                            className="rounded-lg border-[2px] border-[#803c17]
                                         text-[#803c17] px-4 py-2
                                         text-sm font-kavoon"
-                                    >
-                                        Try again
-                                    </button>
+                                        >
+                                            Try again
+                                        </button>
 
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            removeImage(editingImage.id);
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                removeImage(editingImage.id);
 
-                                            setEditingImageId(null);
-                                        }}
-                                        className="rounded-lg bg-[#803c17]
+                                                setEditingImageId(null);
+                                            }}
+                                            className="rounded-lg bg-[#803c17]
                                         text-[#f5e3ca] px-4 py-2
                                         text-sm font-kavoon"
-                                    >
-                                        Remove image
-                                    </button>
+                                        >
+                                            Remove image
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
-                >
-                    <ImageEditModal
-                        image={editingImage}
-                        pageWidthIn={pageDims.widthIn}
-                        pageHeightIn={pageDims.heightIn}
-                        pushIssue={pushIssue}
-                        onSave={(id, payload) => updateImageCrop(id, payload)}
-                        onRemove={removeImage}
-                        onClose={() => setEditingImageId(null)}
-                    />
-                </ErrorBoundary>
-            )}
-        </div>
+                        )}
+                    >
+                        <ImageEditModal
+                            image={editingImage}
+                            pageWidthIn={pageDims.widthIn}
+                            pageHeightIn={pageDims.heightIn}
+                            pushIssue={pushIssue}
+                            onSave={(id, payload) => updateImageCrop(id, payload)}
+                            onRemove={removeImage}
+                            onClose={() => setEditingImageId(null)}
+                        />
+                    </ErrorBoundary>
+                )}
+            </div>
+        </>
     );
 }

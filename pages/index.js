@@ -2,6 +2,7 @@ import gsap from "gsap";
 import { useEffect, useRef } from "react";
 import AnimatedTileBg from "@/components/AnimatedTileBg";
 import StartNyny from "@/components/startNyny";
+import Head from "next/head";
 
 export default function Home() {
   const titleRef = useRef(null);
@@ -46,67 +47,73 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden">
+    <>
+      <Head>
+        <title>LightScanner</title>
+        <meta name="description" content="Convert images into PDF files" />
+      </Head>
+      <div className="relative min-h-screen w-full overflow-hidden">
 
-      <AnimatedTileBg
-        scale={23}
-        speed={40}
-        fileName="/bgs/checker1.png"
-      />
-
-      <main
-        className="relative z-10 min-h-screen w-full flex flex-col items-center justify-center  
-        text-brand-primary p-4 sm:p-8 text-center"
-      >
-        <h1
-          ref={titleRef}
-          className="text-4xl sm:text-7xl md:text-8xl font-kavoon leading-snug tracking-widest"
-          aria-label="LightScanner"
-        >
-          {"LightScanner".split("").map((letter, index) => (
-            <span
-              key={index}
-              className="letter inline-block"
-            >
-              {letter}
-            </span>
-          ))}
-        </h1>
-        <h4 className="text-xl sm:text-3xl md:text-4xl font-melody">
-          Click the character to get started
-        </h4>
-
-        <h4 className="text-2xl sm:text-5xl md:text-6xl font-melody leading-normal">
-          Capture. Upload. Convert
-        </h4>
-
-
-        <h4 className="text-lg sm:text-2xl font-indie leading-normal tracking-wide">
-          Convert{" "}
-          <span
-            ref={(el) => (highlightRefs.current[0] = el)}
-            className=" highlight text-brand-secondary bg-linear-to-r from-brand-secondary to-brand-secondary
-            bg-no-repeat px-2 py-1 rounded-sm"
-          >
-            Images
-          </span>{" "}
-          into{" "}
-          <span
-            ref={(el) => (highlightRefs.current[1] = el)}
-            className="highlight text-brand-secondary bg-linear-to-r from-brand-secondary to-brand-secondary
-            bg-no-repeat px-2 py-1 rounded-sm"
-          >
-            PDF
-          </span>{" "}
-          file
-        </h4>
-        <div className="h-[10vw]"/>
-
-        <StartNyny
-          scale={50}
-          href="/convert"
+        <AnimatedTileBg
+          scale={23}
+          speed={40}
+          fileName="/bgs/checker1.png"
         />
-      </main>
-    </div>
+
+        <main
+          className="relative z-10 min-h-screen w-full flex flex-col items-center justify-center  
+        text-brand-primary p-4 sm:p-8 text-center"
+        >
+          <h1
+            ref={titleRef}
+            className="text-4xl sm:text-7xl md:text-8xl font-kavoon leading-snug tracking-widest"
+            aria-label="LightScanner"
+          >
+            {"LightScanner".split("").map((letter, index) => (
+              <span
+                key={index}
+                className="letter inline-block"
+              >
+                {letter}
+              </span>
+            ))}
+          </h1>
+          <h4 className="text-xl sm:text-3xl md:text-4xl font-melody">
+            Click the character to get started
+          </h4>
+
+          <h4 className="text-2xl sm:text-5xl md:text-6xl font-melody leading-normal">
+            Capture. Upload. Convert
+          </h4>
+
+
+          <h4 className="text-lg sm:text-2xl font-indie leading-normal tracking-wide">
+            Convert{" "}
+            <span
+              ref={(el) => (highlightRefs.current[0] = el)}
+              className=" highlight text-brand-secondary bg-linear-to-r from-brand-secondary to-brand-secondary
+            bg-no-repeat px-2 py-1 rounded-sm"
+            >
+              Images
+            </span>{" "}
+            into{" "}
+            <span
+              ref={(el) => (highlightRefs.current[1] = el)}
+              className="highlight text-brand-secondary bg-linear-to-r from-brand-secondary to-brand-secondary
+            bg-no-repeat px-2 py-1 rounded-sm"
+            >
+              PDF
+            </span>{" "}
+            file
+          </h4>
+          <div className="h-[10vw]" />
+
+          <StartNyny
+            scale={50}
+            href="/convert"
+          />
+        </main>
+      </div>
+    </>
   );
 }
