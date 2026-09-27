@@ -10,8 +10,8 @@ https://lightscanner.vercel.app/
 
 </div>
 
-![Lightscanner Screenshot 1](footage/img1.png)
-![Lightscanner Screenshot 2](footage/img2.png)
+![Lightscanner Screenshot 1](footages/img1.png)
+![Lightscanner Screenshot 2](footages/img2.png)
 
 ----
 
