@@ -27,7 +27,7 @@ The app also works if you want to simply convert images to normal PDF without fi
 
 1. You'll be able to upload 25 images per batch.
 2. Built-in filter options: Normal, Black and White, Grayscale, Enhance, and Vivid
-3. Customizable paper sizes and orientation
+3. Customizable paper sizes (including custom size and fit-to-page option) and orientation
 4. Crop and preview for each image.
 5. For mobile, photos can be directly taken from the camera.
 

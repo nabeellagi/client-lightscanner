@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AnimatedTileBg from "@/components/AnimatedTileBg";
 import ImageDropzone from "@/components/ImageDropzone";
 import ImageGrid from "@/components/ImageGrid";
 import UploadToastStack from "@/components/UploadToastStack";
 import ImageEditModal from "@/components/ImageEditModal";
+import CustomSizeFields from "@/components/CustomSizeFields";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import CameraButton from "@/components/CameraButton";
 import FilterBackdrop from "@/components/FilterBackdrop";
@@ -15,13 +16,33 @@ import { useImageUploader, MAX_IMAGES } from "@/hooks/useImageUploader";
 import { usePageSettings } from "@/hooks/usePageSettings";
 import {
     PAGE_SIZES,
-    getPageSizeById,
-    orientedDimensions,
+    FIT_PAGE_ID,
+    CUSTOM_PAGE_ID,
+    CUSTOM_MIN_CM,
+    CUSTOM_MAX_CM,
+    resolvePageSettings,
 } from "@/lib/pageSizes";
-import { computeContainFit } from "@/lib/fitToPage";
+import {
+    computeContainFit,
+    computeFitPageSize,
+    FIT_MAX_LONG_SIDE_IN,
+} from "@/lib/fitToPage";
 import { API_BASE_URL, apiHeaders } from "@/lib/api";
 import Head from "next/head";
 
+// Clean pdf name
+function cleanPdfName(raw, fallback = "lightscanner") {
+    const cleaned = String(raw ?? "")
+        .replace(/\.pdf$/i, "")
+        .replace(/[\\/:*?"<>|\u0000-\u001f]/g, "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .replace(/^\.+|\.+$/g, "")
+        .slice(0, 100)
+        .trim();
+
+    return cleaned || fallback;
+}
 
 function sanitizeFilename(filename, fallback = "image") {
     const base = filename?.replace(/\.[^/.]+$/, "") || fallback;
@@ -31,26 +52,31 @@ function sanitizeFilename(filename, fallback = "image") {
     return safe || fallback;
 }
 
-function buildRequestSettings(images, pageSizeId, orientation) {
-    const pageSize = getPageSizeById(pageSizeId);
-    const pageDims = orientedDimensions(pageSize, orientation);
+function buildRequestSettings(images, page) {
+    const isFit = page.mode === "fit";
 
     return {
-        pageSizeId,
-        orientation,
-        pageWidthIn: pageDims.widthIn,
-        pageHeightIn: pageDims.heightIn,
+        pageSizeId: page.id,
+        orientation: page.orientation,
+        pageWidthIn: page.widthIn,
+        pageHeightIn: page.heightIn,
 
         images: images.map((image, index) => {
             const widthPx = image.croppedWidth ?? image.width;
 
             const heightPx = image.croppedHeight ?? image.height;
 
+            // Fit to page: every image gets a page of its own shape.
+            // Other modes share one page size for the whole batch.
+            const imagePage = isFit
+                ? computeFitPageSize(widthPx, heightPx)
+                : { pageWidthIn: page.widthIn, pageHeightIn: page.heightIn };
+
             const fit = computeContainFit(
                 widthPx,
                 heightPx,
-                pageDims.widthIn,
-                pageDims.heightIn,
+                imagePage.pageWidthIn,
+                imagePage.pageHeightIn,
             );
 
             return {
@@ -67,6 +93,13 @@ function buildRequestSettings(images, pageSizeId, orientation) {
                 marginXIn: fit.marginXIn,
 
                 marginYIn: fit.marginYIn,
+
+                ...(isFit
+                    ? {
+                        pageWidthIn: imagePage.pageWidthIn,
+                        pageHeightIn: imagePage.pageHeightIn,
+                    }
+                    : {}),
             };
         }),
     };
@@ -82,8 +115,16 @@ export default function Convert() {
     const { images, addFiles, removeImage, reorder, updateImageCrop } =
         useImageUploader(pushIssue);
 
-    const { pageSizeId, setPageSizeId, orientation, setOrientation } =
-        usePageSettings();
+    const {
+        pageSizeId,
+        setPageSizeId,
+        orientation,
+        setOrientation,
+        customWidthCm,
+        setCustomWidthCm,
+        customHeightCm,
+        setCustomHeightCm,
+    } = usePageSettings();
 
     const [editingImageId, setEditingImageId] = useState(null);
 
@@ -115,15 +156,26 @@ export default function Convert() {
 
     const tabLabel = images.length ? `${images.length}/${MAX_IMAGES}` : "Upload";
 
-    const pageDims = orientedDimensions(getPageSizeById(pageSizeId), orientation);
+    const page = useMemo(
+        () =>
+            resolvePageSettings({
+                pageSizeId,
+                orientation,
+                customWidthCm,
+                customHeightCm,
+            }),
+        [pageSizeId, orientation, customWidthCm, customHeightCm],
+    );
 
-    const pageLabel = `${getPageSizeById(pageSizeId).label} · ${orientation}`;
+    const pageDims = { widthIn: page.widthIn, heightIn: page.heightIn };
+
+    const pageLabel = page.label;
 
     const editingImage = images.find((img) => img.id === editingImageId) ?? null;
 
     const createConversionRequest = useCallback(
         (mode = selectedMode) => {
-            const settings = buildRequestSettings(images, pageSizeId, orientation);
+            const settings = buildRequestSettings(images, page);
 
             const files = images.map((image, index) => {
                 const source = image.conversionBlob ?? image.file;
@@ -147,7 +199,7 @@ export default function Convert() {
                 files,
             };
         },
-        [images, pageSizeId, orientation, selectedMode],
+        [images, page, selectedMode],
     );
 
     const submitConversion = useCallback(
@@ -208,7 +260,7 @@ export default function Convert() {
 
                 setDownloadName(`lightscanner-${request.mode}.pdf`);
 
-                setConversionPhase("success");
+                setConversionPhase("naming");
             } catch (error) {
                 console.error("PDF conversion failed:", error);
 
@@ -225,7 +277,7 @@ export default function Convert() {
     );
 
     const handleOpenFilters = () => {
-        if (!images.length) return;
+        if (!images.length || !page.valid) return;
 
         setFilterOpen(true);
     };
@@ -236,6 +288,22 @@ export default function Convert() {
         setFilterOpen(false);
 
         void submitConversion(request);
+    };
+
+    const handleConfirmName = (rawName) => {
+        const finalName = `${cleanPdfName(rawName)}.pdf`;
+
+        setDownloadName(finalName);
+
+        // Trigger the browser download (we're inside a click handler, so this is allowed).
+        const link = document.createElement("a");
+        link.href = downloadUrl;
+        link.download = finalName;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+
+        setConversionPhase("success");
     };
 
     const handleRetry = () => {
@@ -298,7 +366,7 @@ export default function Convert() {
                                             onEdit={setEditingImageId}
                                         />
                                     </div>
-
+                                    <div className="w-full border-t-[2.5px] border-[#803c17]/30" />
                                     <div className="w-full sm:w-72">
                                         <ImageDropzone
                                             onFiles={addFiles}
@@ -307,67 +375,92 @@ export default function Convert() {
                                         />
                                     </div>
 
-                                    <div
-                                        className="w-full flex flex-col sm:flex-row items-stretch
-                                    sm:items-end gap-3 border-t-[2.5px]
-                                    border-[#803c17]/30 pt-4"
-                                    >
-                                        <label className="flex-1 flex flex-col gap-1 text-left">
-                                            <span className="font-kavoon text-xs text-[#803c17]">
-                                                Page size
-                                            </span>
+                                    <div className="w-full flex flex-col gap-3 border-t-[2.5px] border-[#803c17]/30 pt-4">
+                                        <div
+                                            className="w-full flex flex-col sm:flex-row items-stretch
+                                        sm:items-end gap-3"
+                                        >
+                                            <label className="flex-1 flex flex-col gap-1 text-left">
+                                                <span className="font-kavoon text-xs text-[#803c17]">
+                                                    Page size
+                                                </span>
 
-                                            <select
-                                                value={pageSizeId}
-                                                onChange={(e) => setPageSizeId(e.target.value)}
-                                                className="bg-white border-[2px] border-[#803c17]
-                                            rounded-lg px-3 py-2 text-sm text-[#4a2410]
-                                            focus:outline-none focus:ring-2 focus:ring-[#803c17]/40"
-                                            >
-                                                {PAGE_SIZES.map((size) => (
-                                                    <option key={size.id} value={size.id}>
-                                                        {size.label} ({size.widthIn}
-                                                        &quot;
-                                                        {" × "}
-                                                        {size.heightIn}
-                                                        &quot;)
+                                                <select
+                                                    value={pageSizeId}
+                                                    onChange={(e) => setPageSizeId(e.target.value)}
+                                                    className="bg-white border-[2px] border-[#803c17]
+                                                rounded-lg px-3 py-2 text-sm text-[#4a2410]
+                                                focus:outline-none focus:ring-2 focus:ring-[#803c17]/40"
+                                                >
+                                                    {PAGE_SIZES.map((size) => (
+                                                        <option key={size.id} value={size.id}>
+                                                            {size.label} ({size.widthIn}
+                                                            &quot;
+                                                            {" × "}
+                                                            {size.heightIn}
+                                                            &quot;)
+                                                        </option>
+                                                    ))}
+                                                    <option value={FIT_PAGE_ID}>Fit to page (match each image)</option>
+                                                    <option value={CUSTOM_PAGE_ID}>
+                                                        Custom size ({CUSTOM_MIN_CM}–{CUSTOM_MAX_CM} cm)
                                                     </option>
-                                                ))}
-                                            </select>
-                                        </label>
+                                                </select>
+                                            </label>
 
-                                        <div className="flex flex-col gap-1 text-left">
-                                            <span className="font-kavoon text-xs text-[#803c17]">
-                                                Orientation
-                                            </span>
+                                            {page.mode === "preset" && (
+                                                <div className="flex flex-col gap-1 text-left">
+                                                    <span className="font-kavoon text-xs text-[#803c17]">
+                                                        Orientation
+                                                    </span>
 
-                                            <div className="flex rounded-lg border-[2px] border-[#803c17] overflow-hidden">
-                                                {["portrait", "landscape"].map((option) => (
-                                                    <button
-                                                        key={option}
-                                                        type="button"
-                                                        onClick={() => setOrientation(option)}
-                                                        className={`px-3 py-2 text-sm capitalize transition-colors ${orientation === option
-                                                            ? "bg-[#803c17] text-[#f5e3ca]"
-                                                            : "bg-white text-[#803c17]"
-                                                            }`}
-                                                    >
-                                                        {option}
-                                                    </button>
-                                                ))}
-                                            </div>
+                                                    <div className="flex rounded-lg border-[2px] border-[#803c17] overflow-hidden">
+                                                        {["portrait", "landscape"].map((option) => (
+                                                            <button
+                                                                key={option}
+                                                                type="button"
+                                                                onClick={() => setOrientation(option)}
+                                                                className={`px-3 py-2 text-sm capitalize transition-colors ${orientation === option
+                                                                    ? "bg-[#803c17] text-[#f5e3ca]"
+                                                                    : "bg-white text-[#803c17]"
+                                                                    }`}
+                                                            >
+                                                                {option}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            <button
+                                                type="button"
+                                                onClick={handleOpenFilters}
+                                                disabled={!page.valid}
+                                                className="font-kavoon text-sm sm:self-end
+                                            bg-[#803c17] text-[#f5e3ca]
+                                            rounded-lg px-6 py-2.5
+                                            hover:opacity-90 transition-opacity
+                                            disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                NEXT
+                                            </button>
                                         </div>
 
-                                        <button
-                                            type="button"
-                                            onClick={handleOpenFilters}
-                                            className="font-kavoon text-sm sm:self-end
-                                        bg-[#803c17] text-[#f5e3ca]
-                                        rounded-lg px-6 py-2.5
-                                        hover:opacity-90 transition-opacity"
-                                        >
-                                            NEXT
-                                        </button>
+                                        {page.mode === "fit" && (
+                                            <p className="text-[11px] text-[#803c17]/70 text-left">
+                                                Each page takes the shape of its image, scaled to roughly A4 size
+                                                (longest side capped at {(FIT_MAX_LONG_SIDE_IN * 2.54).toFixed(0)} cm).
+                                            </p>
+                                        )}
+
+                                        {page.mode === "custom" && (
+                                            <CustomSizeFields
+                                                widthCm={customWidthCm}
+                                                heightCm={customHeightCm}
+                                                onWidthChange={setCustomWidthCm}
+                                                onHeightChange={setCustomHeightCm}
+                                            />
+                                        )}
                                     </div>
                                 </>
                             )}
@@ -394,6 +487,8 @@ export default function Convert() {
                     errorMessage={conversionError}
                     downloadUrl={downloadUrl}
                     downloadName={downloadName}
+                    defaultName={downloadName.replace(/\.pdf$/i, "")}
+                    onConfirmName={handleConfirmName}
                     onRetry={handleRetry}
                     onClose={handleCloseConversion}
                 />
@@ -452,6 +547,7 @@ export default function Convert() {
                             image={editingImage}
                             pageWidthIn={pageDims.widthIn}
                             pageHeightIn={pageDims.heightIn}
+                            fitToPage={page.mode === "fit"}
                             pushIssue={pushIssue}
                             onSave={(id, payload) => updateImageCrop(id, payload)}
                             onRemove={removeImage}

@@ -5,7 +5,7 @@ import Cropper from "react-easy-crop";
 import gsap from "gsap";
 import PagePreview from "./PagePreview";
 import { getCroppedImage } from "@/lib/cropImage";
-import { computeContainFit } from "@/lib/fitToPage";
+import { computeContainFit, computeFitPageSize } from "@/lib/fitToPage";
 
 const ASPECT_OPTIONS = [
     { id: "original", label: "Original" },
@@ -13,11 +13,24 @@ const ASPECT_OPTIONS = [
     { id: "square", label: "Square" },
 ];
 
+// Keeps very tall pages (custom / fit-to-page) from stretching the preview.
+const PREVIEW_MAX_WIDTH_PX = 220;
+const PREVIEW_MAX_HEIGHT_PX = 360;
+
 function safeAspect(width, height) {
     return Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0 ? width / height : 1;
 }
 
-export default function ImageEditModal({ image, pageWidthIn, pageHeightIn, pushIssue, onSave, onRemove, onClose }) {
+export default function ImageEditModal({
+    image,
+    pageWidthIn,
+    pageHeightIn,
+    fitToPage = false,
+    pushIssue,
+    onSave,
+    onRemove,
+    onClose,
+}) {
     const backdropRef = useRef(null);
     const panelRef = useRef(null);
     const closingRef = useRef(false);
@@ -98,14 +111,23 @@ export default function ImageEditModal({ image, pageWidthIn, pageHeightIn, pushI
         }
     };
 
-    const fit = computeContainFit(
-        croppedAreaPixels?.width ?? image.width,
-        croppedAreaPixels?.height ?? image.height,
-        pageWidthIn,
-        pageHeightIn
+    const cropWidthPx = croppedAreaPixels?.width ?? image.width;
+    const cropHeightPx = croppedAreaPixels?.height ?? image.height;
+
+    // Fit-to-page: the page itself follows the crop, so there is no fixed page to match.
+    const fitPage = fitToPage ? computeFitPageSize(cropWidthPx, cropHeightPx) : null;
+    const previewPageWidthIn = fitPage ? fitPage.pageWidthIn : pageWidthIn;
+    const previewPageHeightIn = fitPage ? fitPage.pageHeightIn : pageHeightIn;
+    const aspectOptions = fitToPage ? ASPECT_OPTIONS.filter((opt) => opt.id !== "page") : ASPECT_OPTIONS;
+    const previewMaxWidthPx = Math.min(
+        PREVIEW_MAX_WIDTH_PX,
+        PREVIEW_MAX_HEIGHT_PX * (previewPageWidthIn / previewPageHeightIn)
     );
-    const marginText =
-        fit.marginXIn > 0.02
+
+    const fit = computeContainFit(cropWidthPx, cropHeightPx, previewPageWidthIn, previewPageHeightIn);
+    const marginText = fitPage
+        ? `Page matches this crop · ${previewPageWidthIn.toFixed(1)}" × ${previewPageHeightIn.toFixed(1)}" (${(previewPageWidthIn * 2.54).toFixed(1)} × ${(previewPageHeightIn * 2.54).toFixed(1)} cm)`
+        : fit.marginXIn > 0.02
             ? `${fit.marginXIn.toFixed(2)}" margin on the sides`
             : fit.marginYIn > 0.02
                 ? `${fit.marginYIn.toFixed(2)}" margin top and bottom`
@@ -169,7 +191,7 @@ export default function ImageEditModal({ image, pageWidthIn, pageHeightIn, pushI
                         <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-5">
                             <div>
                                 <div className="flex gap-2 mb-2">
-                                    {ASPECT_OPTIONS.map((opt) => (
+                                    {aspectOptions.map((opt) => (
                                         <button
                                             key={opt.id}
                                             type="button"
@@ -215,17 +237,18 @@ export default function ImageEditModal({ image, pageWidthIn, pageHeightIn, pushI
 
                             <div>
                                 <p className="font-kavoon text-xs text-[#803c17] mb-2 text-left">As a printed page</p>
-                                <PagePreview
-                                    pageWidthIn={pageWidthIn}
-                                    pageHeightIn={pageHeightIn}
-                                    src={image.previewUrl}
-                                    imgWidth={image.width}
-                                    imgHeight={image.height}
-                                    croppedAreaPercent={croppedAreaPercent}
-                                    cropWidthPx={croppedAreaPixels?.width ?? image.width}
-                                    cropHeightPx={croppedAreaPixels?.height ?? image.height}
-                                    className="max-w-[220px]"
-                                />
+                                <div className="mx-auto" style={{ maxWidth: `${previewMaxWidthPx}px` }}>
+                                    <PagePreview
+                                        pageWidthIn={previewPageWidthIn}
+                                        pageHeightIn={previewPageHeightIn}
+                                        src={image.previewUrl}
+                                        imgWidth={image.width}
+                                        imgHeight={image.height}
+                                        croppedAreaPercent={croppedAreaPercent}
+                                        cropWidthPx={cropWidthPx}
+                                        cropHeightPx={cropHeightPx}
+                                    />
+                                </div>
                                 <p className="text-[11px] text-[#803c17]/70 mt-2 text-left">{marginText}</p>
                             </div>
                         </div>

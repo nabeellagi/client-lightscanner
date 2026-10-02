@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import gsap from "gsap";
 
@@ -9,11 +9,19 @@ export default function ConversionOverlay({
     errorMessage,
     downloadUrl,
     downloadName,
+    defaultName = "lightscanner",
+    onConfirmName,
     onRetry,
     onClose,
 }) {
     const backdropRef = useRef(null);
     const panelRef = useRef(null);
+    const [nameInput, setNameInput] = useState(defaultName);
+
+    // Pre-fill the input every time the naming step opens.
+    useEffect(() => {
+        if (phase === "naming") setNameInput(defaultName);
+    }, [phase, defaultName]);
 
     useEffect(() => {
         if (!phase) return;
@@ -53,6 +61,7 @@ export default function ConversionOverlay({
 
     const isLoading = phase === "loading";
     const isError = phase === "error";
+    const isNaming = phase === "naming";
     const isSuccess = phase === "success";
 
     return (
@@ -129,6 +138,68 @@ export default function ConversionOverlay({
                     </>
                 )}
 
+                {isNaming && (
+                    <>
+                        <div className="relative w-28 h-28 mx-auto mb-4">
+                            <Image
+                                src="/ocs/nyny-upload.png"
+                                alt=""
+                                fill
+                                unoptimized
+                                style={{
+                                    objectFit: "contain",
+                                    imageRendering: "pixelated",
+                                }}
+                            />
+                        </div>
+
+                        <h4 className="font-kavoon text-xl text-[#803c17]">
+                            What would you like to name this file?
+                        </h4>
+
+                        <form
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                onConfirmName?.(nameInput);
+                            }}
+                        >
+                            <div className="relative mt-4">
+                                <input
+                                    type="text"
+                                    value={nameInput}
+                                    onChange={(e) => setNameInput(e.target.value)}
+                                    onFocus={(e) => e.target.select()}
+                                    maxLength={100}
+                                    autoFocus
+                                    autoComplete="off"
+                                    aria-label="File name"
+                                    placeholder="lightscanner"
+                                    className="w-full bg-white border-[2px] border-[#803c17] rounded-lg pl-3 pr-12 py-2 text-sm text-[#4a2410]
+                                    focus:outline-none focus:ring-2 focus:ring-[#803c17]/40"
+                                />
+                                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#803c17]/60">
+                                    .pdf
+                                </span>
+                            </div>
+
+                            <button
+                                type="submit"
+                                className="mt-5 block w-full rounded-lg bg-[#803c17] text-[#f5e3ca] py-2.5 text-sm font-kavoon hover:opacity-90 transition-opacity"
+                            >
+                                CONFIRM &amp; DOWNLOAD
+                            </button>
+                        </form>
+
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="mt-2 text-xs text-[#803c17]/60 underline underline-offset-2"
+                        >
+                            Cancel
+                        </button>
+                    </>
+                )}
+
                 {isSuccess && (
                     <>
                         <div className="relative w-28 h-28 mx-auto mb-4">
@@ -145,7 +216,7 @@ export default function ConversionOverlay({
                         </div>
 
                         <h4 className="font-kavoon text-xl text-[#803c17]">
-                            Your file is ready to download!
+                            Your file has been downloaded!
                         </h4>
 
                         <p className="text-xs text-[#803c17]/65 mt-1 truncate px-3">
@@ -157,7 +228,7 @@ export default function ConversionOverlay({
                             download={downloadName}
                             className="mt-5 block w-full rounded-lg bg-[#803c17] text-[#f5e3ca] py-2.5 text-sm font-kavoon hover:opacity-90 transition-opacity"
                         >
-                            DOWNLOAD PDF
+                            DOWNLOAD AGAIN
                         </a>
 
                         <button
