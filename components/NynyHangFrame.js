@@ -1,45 +1,21 @@
 "use client";
 
+import { NYNY_HANG } from "@/lib/nynyHangConfig";
 import Image from "next/image";
 
-export const NYNY_HANG = {
-    SCALE: 1,
 
-    SIZE_MIN_PX: 150,
-    SIZE_VW: 52,
-    SIZE_MAX_PX: 280,
+function buildVars(cfg) {
+    const { SCALE, SIZE_MIN_PX, SIZE_VW, SIZE_MAX_PX, EDGE_Y, ANCHOR_X_PCT, OFFSET_X_PX, OFFSET_Y_PX } = cfg;
 
-    EDGE_Y: 0.55,
+    return {
+        "--nyny-size": `calc(clamp(${SIZE_MIN_PX}px, ${SIZE_VW}vw, ${SIZE_MAX_PX}px) * ${SCALE})`,
+        "--nyny-top": `calc(var(--nyny-size) * ${-EDGE_Y} + ${OFFSET_Y_PX}px)`,
+        "--nyny-left": `calc(${ANCHOR_X_PCT}% + ${OFFSET_X_PX}px)`,
+        "--nyny-above": `max(0px, calc(var(--nyny-size) * ${EDGE_Y} - ${OFFSET_Y_PX}px))`,
+    };
+}
 
-    ANCHOR_X_PCT: 50,
-
-    OFFSET_X_PX: 0,
-    OFFSET_Y_PX: 0,
-
-    SRC_BACK: "/ocs/nyny_hang_0.png",
-    SRC_FRONT: "/ocs/nyny_hang_1.png",
-};
-
-const {
-    SCALE,
-    SIZE_MIN_PX,
-    SIZE_VW,
-    SIZE_MAX_PX,
-    EDGE_Y,
-    ANCHOR_X_PCT,
-    OFFSET_X_PX,
-    OFFSET_Y_PX,
-    SRC_BACK,
-    SRC_FRONT,
-} = NYNY_HANG;
-
-const FRAME_VARS = {
-    "--nyny-size": `calc(clamp(${SIZE_MIN_PX}px, ${SIZE_VW}vw, ${SIZE_MAX_PX}px) * ${SCALE})`,
-    "--nyny-top": `calc(var(--nyny-size) * ${-EDGE_Y} + ${OFFSET_Y_PX}px)`,
-    "--nyny-above": `max(0px, calc(var(--nyny-size) * ${EDGE_Y} - ${OFFSET_Y_PX}px))`,
-};
-
-function NynyLayer({ src, zIndex, desktopOnly }) {
+function NynyLayer({ src, zIndex, desktopOnly, sizes }) {
     return (
         <Image
             src={src}
@@ -47,14 +23,14 @@ function NynyLayer({ src, zIndex, desktopOnly }) {
             aria-hidden="true"
             width={2048}
             height={2048}
-            sizes={`${Math.round(SIZE_MAX_PX * SCALE)}px`}
+            sizes={sizes}
             draggable={false}
             className={`pointer-events-none select-none absolute max-w-none ${desktopOnly ? "hidden sm:block" : ""}`}
             style={{
                 width: "var(--nyny-size)",
                 height: "var(--nyny-size)",
                 top: "var(--nyny-top)",
-                left: `calc(${ANCHOR_X_PCT}% + ${OFFSET_X_PX}px)`,
+                left: "var(--nyny-left)",
                 transform: "translateX(-50%)",
                 zIndex,
             }}
@@ -68,17 +44,30 @@ export default function NynyHangFrame({
     panelClassName = "",
     desktopOnly = false,
     panelProps = {},
+    nyny = {},
     children,
 }) {
+    const cfg = { ...NYNY_HANG, ...nyny };
+
     return (
-        <div ref={frameRef} className={`relative ${className}`} style={FRAME_VARS}>
-            <NynyLayer src={SRC_BACK} zIndex={0} desktopOnly={desktopOnly} />
+        <div ref={frameRef} className={`relative ${className}`} style={buildVars(cfg)}>
+            <NynyLayer
+                src={cfg.SRC_BACK}
+                zIndex={0}
+                desktopOnly={desktopOnly}
+                sizes={`${Math.round(cfg.SIZE_MAX_PX * cfg.SCALE)}px`}
+            />
 
             <div {...panelProps} className={`relative z-10 ${panelClassName}`}>
                 {children}
             </div>
 
-            <NynyLayer src={SRC_FRONT} zIndex={20} desktopOnly={desktopOnly} />
+            <NynyLayer
+                src={cfg.SRC_FRONT}
+                zIndex={20}
+                desktopOnly={desktopOnly}
+                sizes={`${Math.round(cfg.SIZE_MAX_PX * cfg.SCALE)}px`}
+            />
         </div>
     );
 }

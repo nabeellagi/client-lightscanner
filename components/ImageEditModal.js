@@ -145,8 +145,9 @@ export default function ImageEditModal({
             <NynyHangFrame
                 frameRef={panelRef}
                 className="w-full sm:max-w-lg"
+                nyny={{ ANCHOR_X_PCT: 70 }} // this modal only: higher % = further right
                 panelClassName="bg-[#f5e3ca] border-[#803c17] border-t-[3.5px] sm:border-[3.5px] rounded-t-2xl sm:rounded-2xl
-          max-h-[calc(92vh_-_var(--nyny-above))] sm:max-h-[calc(88vh_-_var(--nyny-above))] flex flex-col overflow-hidden"
+          max-h-[calc(92vh_-_var(--nyny-above))] sm:max-h-[calc(88vh_-_2_*_var(--nyny-above))] flex flex-col overflow-hidden"
             >
                 <div className="flex items-center justify-between px-4 py-3 border-b-[2.5px] border-[#803c17]/30 shrink-0">
                     <h4 className="font-kavoon text-sm text-[#803c17] truncate pr-2">{image.file.name}</h4>
