@@ -11,6 +11,8 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import CameraButton from "@/components/CameraButton";
 import FilterBackdrop from "@/components/FilterBackdrop";
 import ConversionOverlay from "@/components/ConversionOverlay";
+import PrintPreviewModal from "@/components/PrintPreviewModal";
+import TouchParticles from "@/components/TouchParticles";
 import { useUploadIssues } from "@/hooks/useUploadIssues";
 import { useImageUploader, MAX_IMAGES } from "@/hooks/useImageUploader";
 import { usePageSettings } from "@/hooks/usePageSettings";
@@ -30,7 +32,7 @@ import {
 import { API_BASE_URL, apiHeaders } from "@/lib/api";
 import Head from "next/head";
 
-// Clean pdf name
+
 function cleanPdfName(raw, fallback = "lightscanner") {
     const cleaned = String(raw ?? "")
         .replace(/\.pdf$/i, "")
@@ -139,6 +141,8 @@ export default function Convert() {
     const [downloadUrl, setDownloadUrl] = useState(null);
 
     const [downloadName, setDownloadName] = useState("lightscanner.pdf");
+
+    const [previewOpen, setPreviewOpen] = useState(false);
 
     const lastRequestRef = useRef(null);
 
@@ -290,12 +294,17 @@ export default function Convert() {
         void submitConversion(request);
     };
 
+    const handleContinueFromPreview = () => {
+        setPreviewOpen(false);
+
+        handleOpenFilters();
+    };
+
     const handleConfirmName = (rawName) => {
         const finalName = `${cleanPdfName(rawName)}.pdf`;
 
         setDownloadName(finalName);
 
-        // Trigger the browser download (we're inside a click handler, so this is allowed).
         const link = document.createElement("a");
         link.href = downloadUrl;
         link.download = finalName;
@@ -366,7 +375,7 @@ export default function Convert() {
                                             onEdit={setEditingImageId}
                                         />
                                     </div>
-                                    <div className="w-full border-t-[2.5px] border-[#803c17]/30" />
+
                                     <div className="w-full sm:w-72">
                                         <ImageDropzone
                                             onFiles={addFiles}
@@ -432,18 +441,33 @@ export default function Convert() {
                                                 </div>
                                             )}
 
-                                            <button
-                                                type="button"
-                                                onClick={handleOpenFilters}
-                                                disabled={!page.valid}
-                                                className="font-kavoon text-sm sm:self-end
-                                            bg-[#803c17] text-[#f5e3ca]
-                                            rounded-lg px-6 py-2.5
-                                            hover:opacity-90 transition-opacity
-                                            disabled:opacity-50 disabled:cursor-not-allowed"
-                                            >
-                                                NEXT
-                                            </button>
+                                            <div className="flex gap-2 sm:self-end">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setPreviewOpen(true)}
+                                                    disabled={!page.valid}
+                                                    className="flex-1 sm:flex-none font-kavoon text-sm
+                                                bg-white text-[#803c17] border-[2px] border-[#803c17]
+                                                rounded-lg px-5 py-2.5
+                                                hover:bg-[#803c17] hover:text-[#f5e3ca] transition-colors
+                                                disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    PREVIEW
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={handleOpenFilters}
+                                                    disabled={!page.valid}
+                                                    className="flex-1 sm:flex-none font-kavoon text-sm
+                                                bg-[#803c17] text-[#f5e3ca] border-[2px] border-[#803c17]
+                                                rounded-lg px-6 py-2.5
+                                                hover:opacity-90 transition-opacity
+                                                disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    NEXT
+                                                </button>
+                                            </div>
                                         </div>
 
                                         {page.mode === "fit" && (
@@ -471,6 +495,16 @@ export default function Convert() {
                 <CameraButton onFiles={addFiles} disabled={images.length >= MAX_IMAGES} />
 
                 <UploadToastStack issues={issues} onDismiss={dismissIssue} />
+
+                <TouchParticles />
+
+                <PrintPreviewModal
+                    isOpen={previewOpen}
+                    images={images}
+                    page={page}
+                    onClose={() => setPreviewOpen(false)}
+                    onContinue={handleContinueFromPreview}
+                />
 
                 <FilterBackdrop
                     isOpen={filterOpen}

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
+import NynyHangFrame from "@/components/NynyHangFrame";
 import { API_BASE_URL, apiHeaders } from "@/lib/api";
 
 const FALLBACK_MODES = [
@@ -77,7 +78,7 @@ export default function FilterBackdrop({
                 );
             })
             .catch(() => {
-                
+
             });
 
         return () => {
@@ -152,11 +153,12 @@ export default function FilterBackdrop({
                 if (e.target === e.currentTarget) requestClose();
             }}
         >
-            <div
-                ref={panelRef}
-                className="bg-[#f5e3ca] border-[#803c17] border-t-[3.5px] sm:border-[3.5px]
-                rounded-t-2xl sm:rounded-2xl w-full sm:max-w-2xl
-                max-h-[92vh] sm:max-h-[88vh] flex flex-col overflow-hidden"
+            <NynyHangFrame
+                frameRef={panelRef}
+                className="w-full sm:max-w-2xl"
+                panelClassName="bg-[#f5e3ca] border-[#803c17] border-t-[3.5px] sm:border-[3.5px]
+                rounded-t-2xl sm:rounded-2xl
+                max-h-[calc(92vh_-_var(--nyny-above))] sm:max-h-[calc(88vh_-_var(--nyny-above))] flex flex-col overflow-hidden"
             >
                 <div className="flex items-center justify-between px-4 py-3 border-b-[2.5px] border-[#803c17]/30 shrink-0">
                     <div className="text-left">
@@ -191,8 +193,8 @@ export default function FilterBackdrop({
                                     type="button"
                                     onClick={() => onSelect(mode.name)}
                                     className={`text-left rounded-xl border-[2.5px] p-4 transition-all ${selected
-                                            ? "bg-[#803c17] text-[#f5e3ca] border-[#803c17] shadow-[3px_3px_0_rgba(128,60,23,0.25)]"
-                                            : "bg-white text-[#803c17] border-[#803c17]/40 hover:border-[#803c17] hover:-translate-y-0.5"
+                                        ? "bg-[#803c17] text-[#f5e3ca] border-[#803c17] shadow-[3px_3px_0_rgba(128,60,23,0.25)]"
+                                        : "bg-white text-[#803c17] border-[#803c17]/40 hover:border-[#803c17] hover:-translate-y-0.5"
                                         }`}
                                 >
                                     <div className="flex items-start justify-between gap-3">
@@ -203,8 +205,8 @@ export default function FilterBackdrop({
 
                                             <p
                                                 className={`text-xs leading-snug mt-1 ${selected
-                                                        ? "text-[#f5e3ca]/75"
-                                                        : "text-[#803c17]/65"
+                                                    ? "text-[#f5e3ca]/75"
+                                                    : "text-[#803c17]/65"
                                                     }`}
                                             >
                                                 {mode.description}
@@ -213,8 +215,8 @@ export default function FilterBackdrop({
 
                                         <span
                                             className={`shrink-0 w-6 h-6 rounded-full border-[2px] flex items-center justify-center text-xs font-kavoon ${selected
-                                                    ? "border-[#f5e3ca] text-[#f5e3ca]"
-                                                    : "border-[#803c17]/50 text-transparent"
+                                                ? "border-[#f5e3ca] text-[#f5e3ca]"
+                                                : "border-[#803c17]/50 text-transparent"
                                                 }`}
                                         >
                                             ✓
@@ -243,7 +245,7 @@ export default function FilterBackdrop({
                         SEND · {prettyName(selectedMode)}
                     </button>
                 </div>
-            </div>
+            </NynyHangFrame>
         </div>
     );
 }
